@@ -97,7 +97,7 @@ resource "aws_route_table" "private" {
 
   route {
     cidr_block     = "0.0.0.0/0"
-    nat_gateway_id = aws_nat_gateway.nat[0].id
+    nat_gateway_id = aws_nat_gateway.nat[count.index].id  # Dynamically select the NAT gateway for private subnets
   }
 
   tags = {
@@ -111,8 +111,21 @@ resource "aws_route_table_association" "private" {
   route_table_id = aws_route_table.private.id
 }
 
+resource "aws_route_table" "storage" {
+  vpc_id = aws_vpc.main.id
+
+  route {
+    cidr_block     = "0.0.0.0/0"
+    nat_gateway_id = aws_nat_gateway.nat[count.index].id  # Dynamically select the NAT gateway for storage subnets
+  }
+
+  tags = {
+    Name = "${var.vpc_name}-storage-rt"
+  }
+}
+
 resource "aws_route_table_association" "storage" {
   count          = 2
   subnet_id      = aws_subnet.storage[count.index].id
-  route_table_id = aws_route_table.private.id
+  route_table_id = aws_route_table.storage.id
 }
