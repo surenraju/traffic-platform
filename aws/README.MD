@@ -1,3 +1,8 @@
+docker run -it -v $(pwd):/traffic-platform-copy devopsinfra/docker-terragrunt:aws-latest /bin/bash
+
+cd aws
+pip install -r resources/requirements.txt
+python resources/main.py
 
 
 cd ../vpc1
