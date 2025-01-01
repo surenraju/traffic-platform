@@ -1,0 +1,8 @@
+terraform {
+  source = "../../terraform-modules/account"
+}
+
+inputs = {
+  account_id    = "{{ account_id }}"
+  environment   = "{{ environment }}"
+}

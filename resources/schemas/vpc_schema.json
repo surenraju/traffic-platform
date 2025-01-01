@@ -1,0 +1,29 @@
+{
+    "type": "object",
+    "properties": {
+        "apiVersion": { "type": "string", "enum": ["trafficplatform.aws/v1"] },
+        "kind": { "type": "string", "enum": ["VPC"] },
+        "metadata": {
+            "type": "object",
+            "properties": {
+                "name": { "type": "string" }
+            },
+            "required": ["name"]
+        },
+        "spec": {
+            "type": "object",
+            "properties": {
+                "account_id": { "type": "string" },
+                "vpc_name": { "type": "string" },
+                "cidr_block": { "type": "string" },
+                "availability_zones": {
+                    "type": "array",
+                    "items": { "type": "string" }
+                },
+                "environment": { "type": "string" }
+            },
+            "required": ["account_id", "vpc_name", "cidr_block", "availability_zones", "environment"]
+        }
+    },
+    "required": ["apiVersion", "kind", "metadata", "spec"]
+}

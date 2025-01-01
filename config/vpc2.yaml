@@ -1,0 +1,12 @@
+apiVersion: trafficplatform.aws/v1
+kind: VPC
+metadata:
+  name: vpc2
+spec:
+  account_id: "acc1"
+  vpc_name: vpc1
+  cidr_block: 10.20.0.0/16
+  availability_zones:
+    - us-east-1a
+    - us-east-1b
+  environment: prod
