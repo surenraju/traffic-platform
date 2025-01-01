@@ -55,18 +55,18 @@ resource "aws_route_table_association" "public" {
   route_table_id = aws_route_table.public.id
 }
 
+# Provision one NAT Gateway in the first availability zone
 resource "aws_nat_gateway" "nat" {
-  count         = 2
-  allocation_id = aws_eip.nat[count.index].id
-  subnet_id     = aws_subnet.public[count.index].id
+  allocation_id = aws_eip.nat.id
+  subnet_id     = aws_subnet.public[0].id
 
   tags = {
-    Name = "${var.vpc_name}-nat-${count.index + 1}"
+    Name = "${var.vpc_name}-nat"
   }
 }
 
 resource "aws_eip" "nat" {
-  count = 2
+  # Only one EIP for the NAT Gateway
   associate_with_private_ip = true
 }
 
@@ -97,7 +97,7 @@ resource "aws_route_table" "private" {
 
   route {
     cidr_block     = "0.0.0.0/0"
-    nat_gateway_id = aws_nat_gateway.nat[count.index].id  # Dynamically select the NAT gateway for private subnets
+    nat_gateway_id = aws_nat_gateway.nat.id # Use the single NAT gateway for both private and storage subnets
   }
 
   tags = {
@@ -111,21 +111,8 @@ resource "aws_route_table_association" "private" {
   route_table_id = aws_route_table.private.id
 }
 
-resource "aws_route_table" "storage" {
-  vpc_id = aws_vpc.main.id
-
-  route {
-    cidr_block     = "0.0.0.0/0"
-    nat_gateway_id = aws_nat_gateway.nat[count.index].id  # Dynamically select the NAT gateway for storage subnets
-  }
-
-  tags = {
-    Name = "${var.vpc_name}-storage-rt"
-  }
-}
-
 resource "aws_route_table_association" "storage" {
   count          = 2
   subnet_id      = aws_subnet.storage[count.index].id
-  route_table_id = aws_route_table.storage.id
+  route_table_id = aws_route_table.private.id
 }
