@@ -8,10 +8,12 @@ variable "cidr_block" {
   type        = string
 }
 
-variable "availability_zones" {
-  description = "List of availability zones"
-  type        = list(string)
+variable "region" {
+  description = "The AWS region for the VPC"
+  type        = string
+  default     = "us-east-1" 
 }
+
 
 variable "environment" {
   description = "Environment for the VPC (e.g., dev, prod)"

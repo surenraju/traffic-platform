@@ -1,10 +1,5 @@
-terraform {
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 5.82.2"
-    }
-  }
+provider "aws" {
+  region = var.region
 }
 
 resource "aws_vpc" "main" {
@@ -12,8 +7,8 @@ resource "aws_vpc" "main" {
   enable_dns_support   = true
   enable_dns_hostnames = true
   tags = {
-    Name        = "${var.vpc_name}-${var.environment}"
-    Environment = var.environment
+    Name        = "${var.vpc_name}-${var.region}"
+    Environment = "prod"
   }
 }
 
@@ -37,58 +32,87 @@ resource "aws_route_table" "public" {
   }
 }
 
-resource "aws_subnet" "public" {
-  count                   = 2
+resource "aws_subnet" "public_a" {
   vpc_id                  = aws_vpc.main.id
-  cidr_block              = cidrsubnet(var.cidr_block, 8, count.index + 1)
-  availability_zone       = var.availability_zones[count.index]
+  cidr_block              = cidrsubnet(var.cidr_block, 8, 1)
+  availability_zone       = "${var.region}-a"   
   map_public_ip_on_launch = true
 
   tags = {
-    Name = "${var.vpc_name}-public-${count.index + 1}"
+    Name = "${var.vpc_name}-public-a"
   }
 }
 
-resource "aws_route_table_association" "public" {
-  count          = 2
-  subnet_id      = aws_subnet.public[count.index].id
-  route_table_id = aws_route_table.public.id
-}
-
-# Provision one NAT Gateway in the first availability zone
-resource "aws_nat_gateway" "nat" {
-  allocation_id = aws_eip.nat.id
-  subnet_id     = aws_subnet.public[0].id
+resource "aws_subnet" "public_b" {
+  vpc_id                  = aws_vpc.main.id
+  cidr_block              = cidrsubnet(var.cidr_block, 8, 2)
+  availability_zone       = "${var.region}-b"   
+  map_public_ip_on_launch = true
 
   tags = {
-    Name = "${var.vpc_name}-nat"
+    Name = "${var.vpc_name}-public-b"
   }
 }
 
-resource "aws_eip" "nat" {
-  # Only one EIP for the NAT Gateway
-  associate_with_private_ip = true
+resource "aws_nat_gateway" "nat_a" {
+  allocation_id = aws_eip.nat_a.id
+  subnet_id     = aws_subnet.public_a.id
+
+  tags = {
+    Name = "${var.vpc_name}-nat-a"
+  }
 }
 
-resource "aws_subnet" "private" {
-  count             = 2
+resource "aws_nat_gateway" "nat_b" {
+  allocation_id = aws_eip.nat_b.id
+  subnet_id     = aws_subnet.public_b.id
+
+  tags = {
+    Name = "${var.vpc_name}-nat-b"
+  }
+}
+
+resource "aws_eip" "nat_a" {}
+
+resource "aws_eip" "nat_b" {}
+
+resource "aws_subnet" "private_a" {
   vpc_id            = aws_vpc.main.id
-  cidr_block        = cidrsubnet(var.cidr_block, 4, 2 + count.index)
-  availability_zone = var.availability_zones[count.index]
-
+  cidr_block        = cidrsubnet(var.cidr_block, 8, 3)
+  availability_zone = "${var.region}-a"
+  
   tags = {
-    Name = "${var.vpc_name}-private-${count.index + 1}"
+    Name = "${var.vpc_name}-private-a"
   }
 }
 
-resource "aws_subnet" "storage" {
-  count             = 2
+resource "aws_subnet" "private_b" {
   vpc_id            = aws_vpc.main.id
-  cidr_block        = cidrsubnet(var.cidr_block, 4, 4 + count.index)
-  availability_zone = var.availability_zones[count.index]
-
+  cidr_block        = cidrsubnet(var.cidr_block, 8, 4)
+  availability_zone = "${var.region}-b"
+  
   tags = {
-    Name = "${var.vpc_name}-storage-${count.index + 1}"
+    Name = "${var.vpc_name}-private-b"
+  }
+}
+
+resource "aws_subnet" "storage_a" {
+  vpc_id            = aws_vpc.main.id
+  cidr_block        = cidrsubnet(var.cidr_block, 8, 5)
+  availability_zone = "${var.region}-a"
+  
+  tags = {
+    Name = "${var.vpc_name}-storage-a"
+  }
+}
+
+resource "aws_subnet" "storage_b" {
+  vpc_id            = aws_vpc.main.id
+  cidr_block        = cidrsubnet(var.cidr_block, 8, 6)
+  availability_zone = "${var.region}-b"
+  
+  tags = {
+    Name = "${var.vpc_name}-storage-b"
   }
 }
 
@@ -97,7 +121,7 @@ resource "aws_route_table" "private" {
 
   route {
     cidr_block     = "0.0.0.0/0"
-    nat_gateway_id = aws_nat_gateway.nat.id # Use the single NAT gateway for both private and storage subnets
+    nat_gateway_id = aws_nat_gateway.nat_a.id  # Use nat_a for routing
   }
 
   tags = {
@@ -105,14 +129,43 @@ resource "aws_route_table" "private" {
   }
 }
 
-resource "aws_route_table_association" "private" {
-  count          = 2
-  subnet_id      = aws_subnet.private[count.index].id
+resource "aws_route_table_association" "private_a" {
+  subnet_id      = aws_subnet.private_a.id
   route_table_id = aws_route_table.private.id
 }
 
-resource "aws_route_table_association" "storage" {
-  count          = 2
-  subnet_id      = aws_subnet.storage[count.index].id
+resource "aws_route_table_association" "private_b" {
+  subnet_id      = aws_subnet.private_b.id
   route_table_id = aws_route_table.private.id
+}
+
+resource "aws_route_table_association" "storage_a" {
+  subnet_id      = aws_subnet.storage_a.id
+  route_table_id = aws_route_table.private.id
+}
+
+resource "aws_route_table_association" "storage_b" {
+  subnet_id      = aws_subnet.storage_b.id
+  route_table_id = aws_route_table.private.id
+}
+
+# Transit Gateway Attachment Subnets
+resource "aws_subnet" "tgw_attachment_a" {
+  vpc_id            = aws_vpc.main.id
+  cidr_block        = cidrsubnet(var.cidr_block, 8, 7)  # /28 subnet allocation
+  availability_zone = "${var.region}-a"
+  
+  tags = {
+    Name = "${var.vpc_name}-tgw-attachment-a"
+  }
+}
+
+resource "aws_subnet" "tgw_attachment_b" {
+  vpc_id            = aws_vpc.main.id
+  cidr_block        = cidrsubnet(var.cidr_block, 8, 8)  # /28 subnet allocation
+  availability_zone = "${var.region}-b"
+  
+  tags = {
+    Name = "${var.vpc_name}-tgw-attachment-b"
+  }
 }

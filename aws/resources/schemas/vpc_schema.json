@@ -16,13 +16,10 @@
                 "account_id": { "type": "string" },
                 "vpc_name": { "type": "string" },
                 "cidr_block": { "type": "string" },
-                "availability_zones": {
-                    "type": "array",
-                    "items": { "type": "string" }
-                },
+                "region": { "type": "string" },
                 "environment": { "type": "string" }
             },
-            "required": ["account_id", "vpc_name", "cidr_block", "availability_zones", "environment"]
+            "required": ["account_id", "vpc_name", "cidr_block", "region", "environment"]
         }
     },
     "required": ["apiVersion", "kind", "metadata", "spec"]

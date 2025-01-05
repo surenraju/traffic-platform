@@ -5,6 +5,6 @@ terraform {
 inputs = {
   vpc_name          = "{{ vpc_name }}"
   cidr_block        = "{{ cidr_block }}"
-  availability_zones = [{{ availability_zones | map('quote') | join(', ') }}]
+  region            = "{{ region }}"
   environment       = "{{ environment }}"
 }
