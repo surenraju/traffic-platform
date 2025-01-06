@@ -3,7 +3,7 @@ terraform {
 }
 
 inputs = {
-  vpc_name          = "vpc1"
+  vpc_name          = "vpc2"
   cidr_block        = "10.20.0.0/16"
   region            = "us-east-1"
   environment       = "prod"
