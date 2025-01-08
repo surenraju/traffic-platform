@@ -1,0 +1,7 @@
+apiVersion: trafficplatform.aws/v1
+kind: CoreNetworkAttachment
+metadata:
+  name: acc1-core-network-attachment
+spec:
+  account_id: "acc1"
+  region: "us-east-1"

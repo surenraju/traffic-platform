@@ -1,0 +1,8 @@
+apiVersion: trafficplatform.aws/v1
+kind: TransitGateway
+metadata:
+  name: tgw-01
+spec:
+  transit_gateways:
+  - region: us-east-1
+    id: tgw-0293d559f0df7aaae

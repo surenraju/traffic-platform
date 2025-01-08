@@ -1,0 +1,10 @@
+terraform {
+  source = "../../../../terraform-modules/core-network-attachment"
+}
+
+inputs = {
+  vpc_id             = "{{ vpc_id }}"
+  transit_gateway_id = "{{ transit_gateway_id }}"
+  subnet_ids         = {{ subnet_ids | tojson }}
+  route_table_ids    = {{ route_table_ids | tojson }}
+}

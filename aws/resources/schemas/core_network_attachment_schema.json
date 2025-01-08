@@ -1,0 +1,23 @@
+{
+    "type": "object",
+    "properties": {
+        "apiVersion": { "type": "string", "enum": ["trafficplatform.aws/v1"] },
+        "kind": { "type": "string", "enum": ["CoreNetworkAttachment"] },
+        "metadata": {
+            "type": "object",
+            "properties": {
+                "name": { "type": "string" }
+            },
+            "required": ["name"]
+        },
+        "spec": {
+            "type": "object",
+            "properties": {
+                "account_id": { "type": "string" },
+                "region": { "type": "string" }
+            },
+            "required": ["account_id", "region"]
+        }
+    },
+    "required": ["apiVersion", "kind", "metadata", "spec"]
+}
