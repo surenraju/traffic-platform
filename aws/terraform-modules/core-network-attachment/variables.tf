@@ -4,6 +4,16 @@ variable "vpc_id" {
 }
 
 variable "transit_gateway_id" {
-  description = "The ID of the Transit Gateway"
+  description = "The ID of the Transit Gateway."
   type        = string
+}
+
+variable "subnet_ids" {
+  description = "List of subnet IDs for the Transit Gateway attachment."
+  type        = list(string)
+}
+
+variable "route_table_ids" {
+  description = "List of route table IDs for Transit Gateway routing."
+  type        = list(string)
 }

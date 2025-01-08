@@ -18,16 +18,6 @@ terragrunt run-all init
 terragrunt run-all plan
 terragrunt run-all apply
 
-cd ../vpc1
-terragrunt init
-terragrunt plan
-terragrunt apply
-
-cd ../vpc2
-terragrunt init
-terragrunt plan
-terragrunt apply
-
 terragrunt run-all apply --terragrunt-working-dir live/acc1/VPC
 terragrunt run-all apply --terragrunt-working-dir live/acc1/TransitGateway
 terragrunt run-all apply --terragrunt-working-dir live/acc1/CoreNetworkAttachment
