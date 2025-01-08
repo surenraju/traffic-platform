@@ -10,6 +10,9 @@ crash.log
 # Terraform plan output
 *.plan
 
+# Terraform lockfiles
+*.lock.hcl
+
 # Local .terraform directory (Terraform plugin and module cache)
 .terraform/
 
