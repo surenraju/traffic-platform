@@ -2,3 +2,4 @@ PyYAML
 jsonschema
 jinja2
 jsonschema
+boto

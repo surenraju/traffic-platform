@@ -8,9 +8,6 @@ class VPCProcessor(BaseProcessor):
         cidr_blocks = set()
 
         for resource in self.resources:
-            # Print the resource as a formatted JSON
-            print(f"Processing resource: {json.dumps(vars(resource), indent=2)}")
-
             # Accessing attributes via dot notation, not subscripting
             resource_name = resource.metadata["name"]  # Accessing name via attribute
             cidr_block = resource.spec.get("cidr_block")  # Accessing spec attribute

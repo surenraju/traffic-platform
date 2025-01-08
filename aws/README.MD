@@ -3,13 +3,16 @@ docker run -it -v $(pwd):/traffic-platform-copy devopsinfra/docker-terragrunt:aw
 git clone https://{TOKEN}@github.com/surenraju/traffic-platform.git
 git config --global email
 
-cd aws
-pip install -r resources/requirements.txt
-python resources/main.py
+
 
 export AWS_REGION=us-east-1
 export AWS_ACCESS_KEY_ID="your-access-key-id"
 export AWS_SECRET_ACCESS_KEY="your-secret-access-key"
+
+cd aws
+pip install -r resources/requirements.txt
+python3 resources/main.py --resource=VPC
+python3 resources/main.py --resource=CoreNetworkAttachment
 
 terragrunt run-all init
 terragrunt run-all plan
@@ -25,6 +28,9 @@ terragrunt init
 terragrunt plan
 terragrunt apply
 
+terragrunt run-all apply --terragrunt-working-dir live/acc1/VPC
+terragrunt run-all apply --terragrunt-working-dir live/acc1/TransitGateway
+terragrunt run-all apply --terragrunt-working-dir live/acc1/CoreNetworkAttachment
 
 Debug
 export TF_PLUGIN_TIMEOUT=5m

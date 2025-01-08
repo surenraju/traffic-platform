@@ -1,32 +1,33 @@
 import os
 import yaml
+import argparse
 from pathlib import Path
 from trafficplatform_aws_v1_vpc_processor import VPCProcessor
-from trafficplatform_aws_v1_account_processor import AccountProcessor
+from trafficplatform_aws_v1_core_network_attachment_processor import CoreNetworkAttachmentProcessor
 from trafficplatform_aws_v1_vpc import VPCResource
-from trafficplatform_aws_v1_account import AccountResource
+from trafficplatform_aws_v1_core_network_attachment import CoreNetworkAttachmentResource
 
 # Dictionary to keep track of resources by kind
 resources_by_kind = {
-    "Account": [],
+    "CoreNetworkAttachment": [],
     "VPC": [],
 }
 
 RESOURCE_MODELS = {
     "trafficplatform.aws/v1": {
-        "Account": AccountResource,
+        "CoreNetworkAttachment": CoreNetworkAttachmentResource,
         "VPC": VPCResource,
     },
 }
 
 PROCESSORS = {
     "trafficplatform.aws/v1": {
-        "Account": AccountProcessor,
+        "CoreNetworkAttachment": CoreNetworkAttachmentProcessor,
         "VPC": VPCProcessor,
     },
 }
 
-def process_yaml_file(file_path):
+def process_yaml_file(file_path, resource_type=None):
     """Process a single YAML file and group resources by kind."""
     # Load the YAML file
     with open(file_path, 'r') as file:
@@ -34,6 +35,11 @@ def process_yaml_file(file_path):
 
     kind = resource_data.get("kind")
     api_version = resource_data.get("apiVersion")
+
+    # Skip processing if the kind does not match the specified resource type
+    if resource_type and kind != resource_type:
+        print(f"Skipping file: {file_path}")
+        return
 
     # Extract required fields for the resource model
     metadata = resource_data["metadata"]
@@ -56,26 +62,32 @@ def process_yaml_file(file_path):
     # Add the resource instance to resources_by_kind
     resources_by_kind[kind].append(resource_instance)
 
-def process_directory(input_dir):
-    """Process all YAML/YML files in the given directory."""
+
+def process_directory(input_dir, resource_type=None):
+    """Process all YAML/YML files in the given directory for the specified resource type."""
     for root, _, files in os.walk(input_dir):
         for file in files:
             if file.endswith(".yaml") or file.endswith(".yml"):
                 file_path = os.path.join(root, file)
-                print(f"Processing file: {file_path}")
-                process_yaml_file(file_path)
+                process_yaml_file(file_path, resource_type)
 
 def main():
+    # Parse command-line arguments
+    parser = argparse.ArgumentParser(description="Process YAML files and group resources by kind.")
+    parser.add_argument("--resource", type=str, help="Specify the resource type to process (e.g., CoreNetworkAttachment, VPC).")
+    args = parser.parse_args()
+
     current_dir = os.getcwd()
     input_dir = os.path.join(current_dir, "config")
 
-    # Process all YAML/YML files in the directory and group resources by kind
-    process_directory(input_dir)
+    print(f"Processing resource type '{args.resource}'")
+    # Process all YAML/YML files in the directory for the specified resource type
+    process_directory(input_dir, args.resource)
 
     # Process resources for each kind using the corresponding processors
-    if resources_by_kind["Account"]:
-        account_processor = AccountProcessor(resources_by_kind["Account"])
-        account_processor.process()
+    if resources_by_kind["CoreNetworkAttachment"]:
+        core_network_attachment_processor = CoreNetworkAttachmentProcessor(resources_by_kind["CoreNetworkAttachment"])
+        core_network_attachment_processor.process()
 
     if resources_by_kind["VPC"]:
         vpc_processor = VPCProcessor(resources_by_kind["VPC"])

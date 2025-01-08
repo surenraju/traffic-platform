@@ -1,0 +1,38 @@
+# Terraform files
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.json
+*.tfrc.json
+crash.log
+*.backup
+
+# Terraform plan output
+*.plan
+
+# Local .terraform directory (Terraform plugin and module cache)
+.terraform/
+
+# Terragrunt cache and working directories
+.terragrunt-cache/
+.terragrunt/
+
+# Local .terraform providers cache
+.terraform.d/
+
+# IDE and editor files
+# VSCode
+.vscode/
+
+# JetBrains IDEs
+.idea/
+
+# MacOS specific files
+.DS_Store
+
+# Linux swap files
+*.swp
+
+# Windows specific files
+Thumbs.db
+ehthumbs.db
