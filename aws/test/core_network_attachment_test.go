@@ -22,6 +22,7 @@ func TestCoreNetworkAttachmentModule(t *testing.T) {
 			"cidr_block": "10.0.0.0/16",
 			"vpc_name":   "test-vpc",
 			"region":     region,
+			"environment": "prod",
 		},
 	}
 	defer terraform.Destroy(t, vpcOptions)

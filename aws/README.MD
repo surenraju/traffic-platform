@@ -22,6 +22,14 @@ terragrunt run-all apply --terragrunt-working-dir live/acc1/VPC
 terragrunt run-all apply --terragrunt-working-dir live/acc1/TransitGateway
 terragrunt run-all apply --terragrunt-working-dir live/acc1/CoreNetworkAttachment
 
+Test:
+
+go mod init traffic-platform
+go mod tidy
+go test -v ./test
+
+
+
 Debug
 export TF_PLUGIN_TIMEOUT=5m
 rm -rf ~/.terraform.d/plugins
