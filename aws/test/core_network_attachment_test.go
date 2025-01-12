@@ -3,7 +3,9 @@ package test
 import (
 	"testing"
 
-	"github.com/gruntwork-io/terratest/modules/aws"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/gruntwork-io/terratest/modules/terraform"
 	"github.com/stretchr/testify/assert"
 )
@@ -57,15 +59,59 @@ func TestCoreNetworkAttachmentModule(t *testing.T) {
 
 	// Verify TGW Attachment
 	for _, subnetID := range subnetIDs {
-		attachment := aws.GetTransitGatewayVpcAttachment(t, region, map[string]string{
-			"subnet-id": subnetID,
-		})
+		attachment := getTransitGatewayAttachmentForSubnet(t, region, tgwID, subnetID)
 		assert.NotNil(t, attachment, "Transit Gateway Attachment should exist for subnet "+subnetID)
 	}
 
 	// Verify Routes
 	for _, routeTableID := range routeTableIDs {
-		routes := aws.GetRouteTable(t, region, routeTableID)
-		assert.Contains(t, routes.Routes, "10.0.0.0/8", "Route table should have route to 10.0.0.0/8 via Transit Gateway")
+		routeTable := getRouteTable(t, region, routeTableID)
+		assertRouteExists(t, routeTable, "10.0.0.0/8", tgwID)
 	}
+}
+
+func getTransitGatewayAttachmentForSubnet(t *testing.T, region, tgwID, subnetID string) *ec2.TransitGatewayVpcAttachment {
+	sess := session.Must(session.NewSession(&aws.Config{Region: aws.String(region)}))
+	ec2Client := ec2.New(sess)
+
+	output, err := ec2Client.DescribeTransitGatewayVpcAttachments(&ec2.DescribeTransitGatewayVpcAttachmentsInput{
+		Filters: []*ec2.Filter{
+			{
+				Name:   aws.String("transit-gateway-id"),
+				Values: []*string{aws.String(tgwID)},
+			},
+			{
+				Name:   aws.String("subnet-id"),
+				Values: []*string{aws.String(subnetID)},
+			},
+		},
+	})
+	if err != nil || len(output.TransitGatewayVpcAttachments) == 0 {
+		t.Fatalf("Failed to find Transit Gateway VPC Attachment for subnet %s: %v", subnetID, err)
+	}
+	return output.TransitGatewayVpcAttachments[0]
+}
+
+func getRouteTable(t *testing.T, region, routeTableID string) *ec2.RouteTable {
+	sess := session.Must(session.NewSession(&aws.Config{Region: aws.String(region)}))
+	ec2Client := ec2.New(sess)
+
+	output, err := ec2Client.DescribeRouteTables(&ec2.DescribeRouteTablesInput{
+		RouteTableIds: []*string{aws.String(routeTableID)},
+	})
+	if err != nil || len(output.RouteTables) == 0 {
+		t.Fatalf("Failed to find route table %s: %v", routeTableID, err)
+	}
+	return output.RouteTables[0]
+}
+
+func assertRouteExists(t *testing.T, routeTable *ec2.RouteTable, destinationCidrBlock, tgwID string) {
+	found := false
+	for _, route := range routeTable.Routes {
+		if *route.DestinationCidrBlock == destinationCidrBlock && route.TransitGatewayId != nil && *route.TransitGatewayId == tgwID {
+			found = true
+			break
+		}
+	}
+	assert.True(t, found, "Route table should have a route to %s via Transit Gateway %s", destinationCidrBlock, tgwID)
 }

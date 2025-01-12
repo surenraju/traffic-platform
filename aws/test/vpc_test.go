@@ -3,7 +3,9 @@ package test
 import (
 	"testing"
 
-	"github.com/gruntwork-io/terratest/modules/aws"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/gruntwork-io/terratest/modules/terraform"
 	"github.com/stretchr/testify/assert"
 )
@@ -29,8 +31,8 @@ func TestVpcModule(t *testing.T) {
 	vpcID := terraform.Output(t, terraformOptions, "vpc_id")
 	assert.NotEmpty(t, vpcID, "VPC ID should not be empty")
 
-	// Validate Subnets
-	subnets := aws.GetSubnetsForVpc(t, region, vpcID)
+	// Get Subnets
+	subnets := getSubnetsForVpc(t, vpcID, region)
 	assert.Len(t, subnets, 8, "VPC should have 8 subnets")
 
 	// Classify Subnets
@@ -39,14 +41,14 @@ func TestVpcModule(t *testing.T) {
 	tgwSubnets := []string{}
 
 	for _, subnet := range subnets {
-		routeTable := aws.GetRouteTableForSubnet(t, subnet.Id, region)
+		routeTable := getRouteTableForSubnet(t, subnet.SubnetId, region)
 
 		if hasInternetGatewayRoute(routeTable) {
-			publicSubnets = append(publicSubnets, subnet.Id)
+			publicSubnets = append(publicSubnets, *subnet.SubnetId)
 		} else if hasNatGatewayRoute(routeTable) {
-			privateSubnets = append(privateSubnets, subnet.Id)
+			privateSubnets = append(privateSubnets, *subnet.SubnetId)
 		} else if hasTgwAttachmentTag(subnet) {
-			tgwSubnets = append(tgwSubnets, subnet.Id)
+			tgwSubnets = append(tgwSubnets, *subnet.SubnetId)
 		}
 	}
 
@@ -65,16 +67,70 @@ func TestVpcModule(t *testing.T) {
 	}
 }
 
+func getSubnetsForVpc(t *testing.T, vpcID, region string) []*ec2.Subnet {
+	sess := session.Must(session.NewSession(&aws.Config{Region: aws.String(region)}))
+	ec2Client := ec2.New(sess)
+
+	output, err := ec2Client.DescribeSubnets(&ec2.DescribeSubnetsInput{
+		Filters: []*ec2.Filter{
+			{
+				Name:   aws.String("vpc-id"),
+				Values: []*string{aws.String(vpcID)},
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("Failed to get subnets for VPC %s: %v", vpcID, err)
+	}
+	return output.Subnets
+}
+
+func getRouteTableForSubnet(t *testing.T, subnetID *string, region string) *ec2.RouteTable {
+	sess := session.Must(session.NewSession(&aws.Config{Region: aws.String(region)}))
+	ec2Client := ec2.New(sess)
+
+	output, err := ec2Client.DescribeRouteTables(&ec2.DescribeRouteTablesInput{
+		Filters: []*ec2.Filter{
+			{
+				Name:   aws.String("association.subnet-id"),
+				Values: []*string{subnetID},
+			},
+		},
+	})
+	if err != nil || len(output.RouteTables) == 0 {
+		t.Fatalf("Failed to get route table for subnet %s: %v", *subnetID, err)
+	}
+	return output.RouteTables[0]
+}
+
 func validateTgwSubnetTags(t *testing.T, region, subnetID string, expectedTags map[string]string) {
-	subnet := aws.GetSubnetById(t, region, subnetID)
+	sess := session.Must(session.NewSession(&aws.Config{Region: aws.String(region)}))
+	ec2Client := ec2.New(sess)
+
+	output, err := ec2Client.DescribeSubnets(&ec2.DescribeSubnetsInput{
+		SubnetIds: []*string{aws.String(subnetID)},
+	})
+	if err != nil || len(output.Subnets) == 0 {
+		t.Fatalf("Failed to get subnet %s for tag validation: %v", subnetID, err)
+	}
+	subnet := output.Subnets[0]
+
 	for key, expectedValue := range expectedTags {
-		actualValue, exists := subnet.Tags[key]
-		assert.True(t, exists, "TGW subnet "+subnetID+" should have the tag "+key)
-		assert.Equal(t, expectedValue, actualValue, "TGW subnet "+subnetID+" should have tag "+key+" with value "+expectedValue)
+		actualValue := getTagValue(subnet.Tags, key)
+		assert.Equal(t, expectedValue, actualValue, "Subnet %s should have tag %s with value %s", subnetID, key, expectedValue)
 	}
 }
 
-func hasInternetGatewayRoute(routeTable aws.RouteTable) bool {
+func getTagValue(tags []*ec2.Tag, key string) string {
+	for _, tag := range tags {
+		if *tag.Key == key {
+			return *tag.Value
+		}
+	}
+	return ""
+}
+
+func hasInternetGatewayRoute(routeTable *ec2.RouteTable) bool {
 	for _, route := range routeTable.Routes {
 		if route.GatewayId != nil && *route.GatewayId != "" {
 			return true
@@ -83,7 +139,7 @@ func hasInternetGatewayRoute(routeTable aws.RouteTable) bool {
 	return false
 }
 
-func hasNatGatewayRoute(routeTable aws.RouteTable) bool {
+func hasNatGatewayRoute(routeTable *ec2.RouteTable) bool {
 	for _, route := range routeTable.Routes {
 		if route.NatGatewayId != nil && *route.NatGatewayId != "" {
 			return true
@@ -92,6 +148,11 @@ func hasNatGatewayRoute(routeTable aws.RouteTable) bool {
 	return false
 }
 
-func hasTgwAttachmentTag(subnet aws.Subnet) bool {
-	return subnet.Tags["TransitGatewayAttachment"] == "true"
+func hasTgwAttachmentTag(subnet *ec2.Subnet) bool {
+	for _, tag := range subnet.Tags {
+		if *tag.Key == "TransitGatewayAttachment" && *tag.Value == "true" {
+			return true
+		}
+	}
+	return false
 }
