@@ -1,7 +1,9 @@
 package test
 
 import (
+	"context"
 	"testing"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -12,6 +14,8 @@ import (
 
 func TestCoreNetworkAttachmentModule(t *testing.T) {
 	t.Parallel()
+	_, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
+	defer cancel()
 
 	region := "us-east-1"
 
@@ -19,9 +23,9 @@ func TestCoreNetworkAttachmentModule(t *testing.T) {
 	vpcOptions := &terraform.Options{
 		TerraformDir: "../terraform-modules/vpc",
 		Vars: map[string]interface{}{
-			"cidr_block": "10.0.0.0/16",
-			"vpc_name":   "test-vpc",
-			"region":     region,
+			"cidr_block":  "10.0.0.0/16",
+			"vpc_name":    "test-vpc",
+			"region":      region,
 			"environment": "prod",
 		},
 	}
@@ -42,7 +46,7 @@ func TestCoreNetworkAttachmentModule(t *testing.T) {
 	// Extract outputs
 	vpcID := terraform.Output(t, vpcOptions, "vpc_id")
 	tgwID := terraform.Output(t, tgwOptions, "transit_gateway_id")
-	subnetIDs := terraform.OutputList(t, vpcOptions, "tgw_attachment_subnet_ids")
+	subnetIDs := terraform.OutputList(t, vpcOptions, "tgw_attachment_subnets")
 	routeTableIDs := terraform.OutputList(t, vpcOptions, "private_route_table_ids")
 
 	// Test Core Network Attachment

@@ -1,4 +1,4 @@
-docker run -it -v $(pwd):/traffic-platform-copy devopsinfra/docker-terragrunt:aws-latest /bin/bash
+docker run -it -v $(pwd):/traffic-platform-root docker-terragrunt-local:latest /bin/bash
 
 git clone https://{TOKEN}@github.com/surenraju/traffic-platform.git
 git config --global email

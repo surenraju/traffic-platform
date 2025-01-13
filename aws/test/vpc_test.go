@@ -1,7 +1,9 @@
 package test
 
 import (
+	"context"
 	"testing"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -12,6 +14,8 @@ import (
 
 func TestVpcModule(t *testing.T) {
 	t.Parallel()
+	_, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
+	defer cancel()
 
 	region := "us-east-1"
 

@@ -29,3 +29,9 @@ output "tgw_attachment_subnets" {
     aws_subnet.tgw_attachment_b.id
   ]
 }
+
+output "private_route_table_ids" {
+   value = [
+    aws_route_table.private.id
+  ]
+}
