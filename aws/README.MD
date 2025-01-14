@@ -22,6 +22,8 @@ terragrunt run-all apply --terragrunt-working-dir live/acc1/VPC
 terragrunt run-all apply --terragrunt-working-dir live/acc1/TransitGateway
 terragrunt run-all apply --terragrunt-working-dir live/acc1/CoreNetworkAttachment
 
+terragrunt run-all plan --terragrunt-out-dir=output/plans --terragrunt-working-dir=live/acc1/VPC
+
 Test:
 
 go mod init traffic-platform
