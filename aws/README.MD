@@ -26,6 +26,8 @@ terragrunt run-all plan \
   --terragrunt-json-out-dir=output \
   --terragrunt-working-dir=live/acc1/VPC
 
+conftest test live/acc1/VPC/output/tfplan.json --policy policy/
+
 Test:
 
 go mod init traffic-platform

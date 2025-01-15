@@ -1,0 +1,58 @@
+{
+  "format_version": "1.2",
+  "terraform_version": "1.10.3",
+  "variables": {
+    "cidr_block": { "value": "10.20.0.0/16" },
+    "environment": { "value": "prod" },
+    "region": { "value": "us-east-1" },
+    "vpc_name": { "value": "vpc2" }
+  },
+  "planned_values": {
+    "outputs": {
+      "private_route_table_ids": { "sensitive": false },
+      "private_subnets": { "sensitive": false },
+      "public_subnets": { "sensitive": false },
+      "storage_subnets": { "sensitive": false },
+      "tgw_attachment_subnets": { "sensitive": false },
+      "vpc_id": { "sensitive": false }
+    },
+    "root_module": {
+      "resources": [
+        {
+          "address": "aws_eip.nat_a",
+          "mode": "managed",
+          "type": "aws_eip",
+          "name": "nat_a",
+          "provider_name": "registry.terraform.io/hashicorp/aws",
+          "schema_version": 0,
+          "values": { "address": null, "associate_with_private_ip": null, "tags": null, "timeouts": null },
+          "sensitive_values": { "tags_all": {} }
+        }
+      ]
+    }
+  },
+  "resource_changes": [
+    {
+      "address": "aws_eip.nat_a",
+      "mode": "managed",
+      "type": "aws_eip",
+      "name": "nat_a",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": ["delete"],
+        "before": {
+          "address": "52.15.123.45",
+          "associate_with_private_ip": null,
+          "tags": { "Name": "nat_a" },
+          "timeouts": null
+        },
+        "after": null,
+        "before_sensitive": false,
+        "after_sensitive": false
+      }
+    }
+  ],
+  "applyable": true,
+  "complete": true,
+  "errored": false
+}
