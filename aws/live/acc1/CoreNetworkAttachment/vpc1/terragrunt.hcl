@@ -3,8 +3,8 @@ terraform {
 }
 
 inputs = {
-  vpc_id             = "vpc-0cdf83acc85ee7d40"
-  transit_gateway_id = "tgw-0293d559f0df7aaae"
-  subnet_ids         = ["subnet-08c8921c55256136e", "subnet-0b7063b0b4cecdaa5"]
-  route_table_ids    = ["rtb-0ba7aed0ee05a4a77"]
+  vpc_id             = "vpc-000e5c561a15c50c8"
+  transit_gateway_id = "tgw-0af7b4d6adb179480"
+  subnet_ids         = ["subnet-02a26f32d4f6828b8", "subnet-00d128f4c64d87399"]
+  route_table_ids    = ["rtb-0aebc187547a4f394"]
 }
