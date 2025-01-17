@@ -9,12 +9,14 @@ class CoreNetworkAttachmentProcessor(BaseProcessor):
     def process(self):
         """
         Process the resources: validate and transform them. Generate one terragrunt.hcl
-        for each VPC found in the specified account and region.
+        for each VPC found in the specified account and region. Additionally, generate
+        reachability analysis terragrunt files for each VPC pair.
         """
         if not self.validate():
             return None
 
-        # Loop through resources, validate, transform, and write them to the filesystem
+        processed_vpcs = []  # Global list of all processed VPCs
+
         for resource in self.resources:
             if not self.validate_resource(resource):
                 print(f"Validation failed for resource {resource.metadata['name']}")
@@ -45,11 +47,15 @@ class CoreNetworkAttachmentProcessor(BaseProcessor):
                     terragrunt_content = self.transform_resource(resource, vpc, transit_gateway_id)
                     if terragrunt_content:
                         self.write_to_filesystem(resource, vpc, terragrunt_content)
+                        processed_vpcs.append(vpc)  # Add VPC to the processed list
                     else:
                         print(f"Failed to render terragrunt.hcl for VPC {vpc['vpc_id']}")
 
             except ValueError as e:
                 print(f"Error processing resource {resource.metadata['name']}: {e}")
+
+        # Call the reachability analysis function
+        self.process_network_path_analysis(processed_vpcs, account_id)
 
     def validate(self):
         """Validate the list of CoreNetworkAttachment resources."""
@@ -124,3 +130,45 @@ class CoreNetworkAttachmentProcessor(BaseProcessor):
             terragrunt_file.write(terragrunt_content)
 
         print(f"Generated terragrunt.hcl for {kind} {resource.metadata['name']} at {terragrunt_file_path}")
+
+    def process_network_path_analysis(self, vpcs, account_id):
+        """
+        Generate reachability analysis terragrunt files for all VPC pairs.
+
+        Args:
+            vpcs: List of processed VPCs.
+            account_id: Account ID for the resources.
+        """
+        for source_vpc in vpcs:
+            for target_vpc in vpcs:
+                if source_vpc["vpc_id"] == target_vpc["vpc_id"]:
+                    continue  # Skip pairing a VPC with itself
+
+                # Generate args for the reachability analyzer
+                args = {
+                    "source_vpc_id": source_vpc["vpc_id"],
+                    "target_vpc_id": target_vpc["vpc_id"]
+                }
+
+                # Use VPC names for the directory naming
+                source_vpc_name = source_vpc.get("vpc_name", source_vpc["vpc_id"])
+                target_vpc_name = target_vpc.get("vpc_name", target_vpc["vpc_id"])
+                vpc_pair_name = f"{source_vpc_name}_to_{target_vpc_name}"
+
+                # Render the reachability analyzer terragrunt.hcl content
+                template_file = 'resources/templates/reachability_analyzer_terragrunt.hcl.j2'
+                with open(template_file, 'r') as file:
+                    template_content = file.read()
+
+                template = Template(template_content)
+                content = template.render(**args)
+
+                # Write the rendered content to the filesystem
+                live_dir = Path(f"live/{account_id}/ReachabilityAnalyzer/{vpc_pair_name}")
+                live_dir.mkdir(parents=True, exist_ok=True)
+
+                terragrunt_file_path = live_dir / "terragrunt.hcl"
+                with open(terragrunt_file_path, "w") as terragrunt_file:
+                    terragrunt_file.write(content)
+
+                print(f"Generated reachability analysis terragrunt.hcl for {vpc_pair_name} at {terragrunt_file_path}")

@@ -1,0 +1,10 @@
+terraform {
+  source = "../../../../terraform-modules/reachability-analyzer"
+}
+
+
+inputs = {
+  source_vpc_id     = "{{ source_vpc_id }}"
+  target_vpc_id     = "{{ target_vpc_id }}"
+  protocol          = "tcp"
+}

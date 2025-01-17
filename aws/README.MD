@@ -24,9 +24,7 @@ terragrunt run-all apply --terragrunt-working-dir live/acc1/CoreNetworkAttachmen
 
 terragrunt run-all apply --terragrunt-working-dir live/acc1/ReachabilityAnalyzer
 
-terragrunt run-all plan \
-  --terragrunt-json-out-dir=output \
-  --terragrunt-working-dir=live/acc1/VPC
+terragrunt run-all plan --terragrunt-json-out-dir=output --terragrunt-working-dir=live/acc1/VPC
 
 Validation:
 

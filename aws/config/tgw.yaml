@@ -5,4 +5,4 @@ metadata:
 spec:
   transit_gateways:
   - region: us-east-1
-    id: tgw-0af7b4d6adb179480
+    id: tgw-008a46bb27ebdc169

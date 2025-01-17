@@ -1,25 +1,15 @@
 variable "source_vpc_id" {
-  description = "The ID of the source VPC"
-  type        = string
-}
-
-variable "source_subnet_id" {
-  description = "The ID of the source subnet"
+  description = "ID of the source VPC"
   type        = string
 }
 
 variable "target_vpc_id" {
-  description = "The ID of the target VPC"
-  type        = string
-}
-
-variable "target_subnet_id" {
-  description = "The ID of the target subnet"
+  description = "ID of the target VPC"
   type        = string
 }
 
 variable "protocol" {
-  description = "The protocol for network reachability analysis (e.g., tcp or udp)"
+  description = "Protocol for the reachability analyzer (e.g., tcp, udp)"
   type        = string
   default     = "tcp"
 }

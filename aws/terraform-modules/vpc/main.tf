@@ -183,3 +183,62 @@ resource "aws_subnet" "tgw_attachment_b" {
     TransitGatewayAttachment = "true"
   }
 }
+
+# Used for reachability testing
+resource "aws_security_group" "reachability_test_sg" {
+  name        = "${var.vpc_name}-reachability-test-sg"
+  description = "Allow any traffic"
+  vpc_id      = aws_vpc.main.id
+
+  ingress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name                  = "${var.vpc_name}-ReachabilityTestSG"
+    ReachabilityTestSG    = "true"
+  }
+}
+
+locals {
+  all_reachability_subnets = [
+    {
+      id   = aws_subnet.private_a.id
+      name = "${var.vpc_name}-private-a"
+    },
+    {
+      id   = aws_subnet.private_b.id
+      name = "${var.vpc_name}-private-b"
+    },
+    {
+      id   = aws_subnet.storage_a.id
+      name = "${var.vpc_name}-storage-a"
+    },
+    {
+      id   = aws_subnet.storage_b.id
+      name = "${var.vpc_name}-storage-b"
+    }
+  ]
+}
+
+# Create ENIs for each subnet (Private + Storage),  will be used for reachability testing
+resource "aws_network_interface" "reachability_test" {
+  for_each        = { for subnet in local.all_reachability_subnets : subnet.name => subnet }
+  subnet_id       = each.value.id
+  security_groups = [aws_security_group.reachability_test_sg.id]
+  depends_on      = [aws_security_group.reachability_test_sg]
+  tags = {
+    Name                  = "${each.key}-reachability-test-eni"
+    ReachabilityTestENI   = "true"
+  }
+}
