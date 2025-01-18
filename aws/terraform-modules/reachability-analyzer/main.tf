@@ -63,3 +63,29 @@ resource "aws_ec2_network_insights_path" "source_to_target" {
     }
   )
 }
+
+# Null resource to force trigger on every apply
+resource "null_resource" "always_run" {
+  triggers = {
+    timestamp = timestamp()
+  }
+}
+
+# Run Network Insights Analysis on every Terraform apply
+resource "aws_ec2_network_insights_analysis" "source_to_target_analysis" {
+  network_insights_path_id = aws_ec2_network_insights_path.source_to_target.id
+
+  tags = merge(
+    var.tags,
+    {
+      Name = format("Analysis-%s-to-%s", data.aws_vpc.source_vpc.tags["Name"], data.aws_vpc.target_vpc.tags["Name"])
+    }
+  )
+
+  # Always trigger the analysis
+  lifecycle {
+    replace_triggered_by = [
+      null_resource.always_run
+    ]
+  }
+}
