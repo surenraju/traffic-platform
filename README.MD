@@ -136,7 +136,7 @@ terragrunt run-all apply --terragrunt-working-dir live/acc1/TransitGateway
 
 ### Global Networking as a Service
 
-Lets configure the Transit Gateway for global networking. The setup requires initial configuration:
+Lets configure the Transit Gateway information as putput global networking automation. This is one time configuration:
 
 ```yaml
 # config/tgw.yaml
