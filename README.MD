@@ -173,7 +173,7 @@ spec:
 Run the following command to convert the KRM model into Terraform inputs:
 
 ```sh
-# Transform the TransitGateway KRM model to terragrunt.hcl
+# Transform the CoreNetworkAttachment KRM model to terragrunt.hcl
 python3 resources/main.py --resource=CoreNetworkAttachment
 ```
 
