@@ -53,7 +53,7 @@ lifecycle {
 
 ### Testing Terraform Modules
 
-The POC uses the `terratest` framework to validate individual modules and their interactions. Run the following commands:
+The POC uses the `terratest` framework to validate individual modules and their interactions. Run the following commands from the `aws` folder.
 
 ```sh
 go mod init traffic-platform
@@ -150,27 +150,67 @@ spec:
     id: tgw-008a46bb27ebdc169
 ```
 
-Run the following commands to attach VPCs to the Transit Gateway:
+#### Input for Global Networking as a Service
+
+To enable Global Networking as a Service in the control plane, users need to define a configuration for attaching VPCs to the Transit Gateway. This is achieved by creating a YAML configuration file in the Kubernetes Resource Model (KRM) format, which specifies the account and region for discovering VPCs.
+
+Users define the VPCs to be attached to the global network in the following YAML file:
+
+```yaml
+# config/core-net-att.yaml
+apiVersion: trafficplatform.aws/v1
+kind: CoreNetworkAttachment
+metadata:
+  name: acc1-core-network-attachment
+spec:
+  account_id: "acc1"
+  region: "us-east-1"
+
+```
+
+#### Transform the Configuration into Terraform Inputs
+
+Run the following command to convert the KRM model into Terraform inputs:
 
 ```sh
 # Transform the TransitGateway KRM model to terragrunt.hcl
 python3 resources/main.py --resource=CoreNetworkAttachment
+```
 
-# Run the pan and conftest policies
+This step performs the following tasks:
+
+- Discovers VPCs, subnets, and route tables tagged for Transit Gateway attachment.
+- Converts the input YAML into Terraform-compatible configurations.
+
+#### Validate the Terraform Plan
+
+Before applying the configuration, generate and validate the Terraform plan:
+
+```sh
 terragrunt run-all plan --terragrunt-json-out-dir=output --terragrunt-working-dir=live/acc1/CoreNetworkAttachment
 conftest test live/acc1/CoreNetworkAttachment/output/tfplan.json --policy policy/
+```
 
-# Run terragrunt apply
+#### Apply the Terraform Configuration
+
+Finally, apply the configuration to attach the discovered VPCs to the Transit Gateway:
+
+```sh
 terragrunt run-all apply --terragrunt-working-dir=live/acc1/CoreNetworkAttachment
 ```
 
-### Validation with Reachability Analyzer
+This operation:
+  - Attaches the tagged VPCs to the Transit Gateway
+  - Configures route tables to enable seamless global connectivity
 
-To ensure nothing breaks during automation, the control plane integrates AWS Reachability Analyzer for validation. After configuring the network, trigger connectivity analysis:
+#### Validation with Reachability Analyzer
+
+To ensure network connectivity remains intact during automation, the control plane integrates AWS Reachability Analyzer for validation. This tool tests connectivity between VPCs and verifies that the core network configurations, such as Transit Gateway attachments and route tables, are functioning as expected.
 
 ```sh
 terragrunt run-all apply --terragrunt-working-dir=live/acc1/ReachabilityAnalyzer
 ```
 
-This step validates connectivity between VPCs through the core network. You can veify the results from the UI or API and trigger alerts if any of the test is failing. 
-
+Integrate the test results into your monitoring and alerting system to ensure immediate action on failures:
+  - Use tools like Amazon CloudWatch Alarms or third-party solutions to notify the Networking SRE team when a test fails.
+  - Automate a rollback or additional diagnostics in response to detected issues.
