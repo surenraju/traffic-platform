@@ -88,9 +88,9 @@ python3 resources/main.py --resource=VPC
 
 #### Validation The Plan
 
-To ensure that only valid and intended changes reach production, Conftest policies can be implemented in the pipeline. These policies act as guardrails, detecting and blocking unauthorized or destructive actions such as resource deletions.
+To ensure that only valid and intended changes reach production, `Conftest` policies can be implemented in the pipeline. These policies act as guardrails, detecting and blocking unauthorized or destructive actions such as resource deletions.
 
-Here’s an example Conftest policy that prevents deletion operations:
+Here’s an example `Conftest` policy that prevents deletion operations:
 
 ```rego
 package main
@@ -136,7 +136,7 @@ terragrunt run-all apply --terragrunt-working-dir live/acc1/TransitGateway
 
 ### Global Networking with Transit Gateway
 
-After provisioning the VPCs, configure the Transit Gateway for global networking. The setup requires initial configuration:
+Lets configure the Transit Gateway for global networking. The setup requires initial configuration:
 
 ```yaml
 # config/tgw.yaml
