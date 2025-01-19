@@ -134,7 +134,7 @@ conftest test live/acc1/TransitGateway/output/tfplan.json --policy policy/
 terragrunt run-all apply --terragrunt-working-dir live/acc1/TransitGateway
 ```
 
-### Global Networking with Transit Gateway
+### Global Networking as a Service
 
 Lets configure the Transit Gateway for global networking. The setup requires initial configuration:
 
